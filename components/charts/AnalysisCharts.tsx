@@ -314,6 +314,44 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
         });
     }, [compareData]);
 
+    const monthlyLineLabelOffsets = React.useMemo(() => {
+        const endLabels = compareData.map(item => {
+            let lastIndex = -1;
+            let lastValue = 0;
+            monthlySalesData.forEach((row, index) => {
+                const value = Number(row[item.project]);
+                if (value > 0) {
+                    lastIndex = index;
+                    lastValue = value;
+                }
+            });
+            return { project: item.project, lastIndex, lastValue };
+        }).filter(item => item.lastIndex >= 0);
+
+        const offsetMap = new Map<string, number>();
+        const sortedLabels = [...endLabels].sort((a, b) => b.lastValue - a.lastValue || a.project.localeCompare(b.project));
+        const groupGap = 2;
+        let group: typeof sortedLabels = [];
+        const flushGroup = () => {
+            if (group.length === 0) return;
+            const labelGap = 16;
+            const center = (group.length - 1) / 2;
+            group.forEach((item, index) => offsetMap.set(item.project, (index - center) * labelGap));
+            group = [];
+        };
+
+        sortedLabels.forEach(item => {
+            const previous = group[group.length - 1];
+            if (previous && Math.abs(previous.lastValue - item.lastValue) > groupGap) {
+                flushGroup();
+            }
+            group.push(item);
+        });
+        flushGroup();
+
+        return offsetMap;
+    }, [compareData, monthlySalesData]);
+
     const downloadChartPng = async (target: React.RefObject<HTMLDivElement>, title: string) => {
         if (!target.current) return;
         const dataUrl = await toPng(target.current, {
@@ -456,7 +494,7 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
                 </div>
                 <AxisSideLabel value="成交筆數" />
                 <ResponsiveContainer width="100%" height={monthlyChartHeight}>
-                    <ComposedChart data={monthlySalesData} margin={{ top: 28, right: 180, left: 64, bottom: 74 }}>
+                    <ComposedChart data={monthlySalesData} margin={{ top: 28, right: 210, left: 64, bottom: 74 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="month" angle={-35} textAnchor="end" height={70} tick={{ fontSize: 12, fill: '#334155', fontWeight: 900 }} stroke="#e2e8f0" />
                         <YAxis tick={{ fontSize: 13, fill: '#334155', fontWeight: 900 }} stroke="#e2e8f0" allowDecimals={false} axisLine={false} tickLine={false} />
@@ -480,7 +518,19 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
                                         const value = Number(props.value);
                                         const hasLaterValue = monthlySalesData.slice(index + 1).some(row => Number(row[item.project]) > 0);
                                         if (value <= 0 || hasLaterValue) return null;
-                                        return <text x={Number(props.x) + 10} y={Number(props.y) + 4} fill={item.color} fontSize={12} fontWeight={900}>{item.project}</text>;
+                                        const labelYOffset = monthlyLineLabelOffsets.get(item.project) || 0;
+                                        return (
+                                            <text
+                                                x={Number(props.x) + 10}
+                                                y={Number(props.y) + 4 + labelYOffset}
+                                                fill={item.color}
+                                                fontSize={12}
+                                                fontWeight={900}
+                                                dominantBaseline="middle"
+                                            >
+                                                {item.project}
+                                            </text>
+                                        );
                                     }}
                                 />
                             </Line>
