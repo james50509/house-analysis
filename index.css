@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  padding: 0;
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  width: 300px !important;
+}
+
+.recharts-wrapper,
+.recharts-surface,
+.recharts-layer,
+.recharts-rectangle,
+.recharts-sector,
+.recharts-dot {
+  outline: none !important;
+}
+
+.recharts-wrapper *,
+.recharts-surface * {
+  outline: none !important;
+}
+
+.recharts-wrapper:focus,
+.recharts-wrapper:focus-visible,
+.recharts-surface:focus,
+.recharts-surface:focus-visible,
+.recharts-layer:focus,
+.recharts-layer:focus-visible,
+.recharts-rectangle:focus,
+.recharts-rectangle:focus-visible,
+.recharts-sector:focus,
+.recharts-sector:focus-visible,
+.recharts-dot:focus,
+.recharts-dot:focus-visible {
+  outline: none !important;
+}
+
+.recharts-wrapper *:focus,
+.recharts-wrapper *:focus-visible,
+.recharts-surface *:focus,
+.recharts-surface *:focus-visible {
+  outline: none !important;
+}
+
+.project-marker-div-icon {
+  background: transparent;
+  border: 0;
+}
+
+.project-marker-wrap {
+  height: 36px;
+  overflow: visible;
+  position: relative;
+  width: 36px;
+}
+
+.project-marker-pin {
+  filter: drop-shadow(1px 2px 3px rgba(0, 0, 0, 0.3));
+}
+
+.project-marker-name {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.14);
+  color: #0f172a;
+    font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  padding: 3px 8px;
+  position: absolute;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.project-marker-name-right {
+  left: 32px;
+  top: 6px;
+}
+
+.project-marker-name-left {
+  right: 32px;
+  top: 6px;
+}
+
+.project-marker-name-top {
+  bottom: 38px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.project-marker-name-bottom {
+  left: 50%;
+  top: 38px;
+  transform: translateX(-50%);
+}
