@@ -555,8 +555,11 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
                                         const hasLaterValue = monthlySalesData.slice(index + 1).some(row => Number(row[item.project]) > 0);
                                         if (value <= 0 || hasLaterValue) return null;
                                         const labelYOffset = monthlyLineLabelOffsets.get(item.project) || 0;
-                                        const periodsToRight = Math.max(0, monthlySalesData.length - 1 - index);
-                                        const labelX = Number(props.x) + 10 + periodsToRight * monthlyLineLabelXStep;
+                                        const x = Number(props.x);
+                                        const inferredStep = index > 0
+                                            ? (x - PROJECT_COMPARE_MONTHLY_MARGIN.left) / index
+                                            : monthlyLineLabelXStep;
+                                        const labelX = PROJECT_COMPARE_MONTHLY_MARGIN.left + (monthlySalesData.length - 1) * inferredStep + 10;
                                         return (
                                             <text
                                                 x={labelX}
