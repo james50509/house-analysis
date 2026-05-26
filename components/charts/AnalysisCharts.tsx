@@ -23,6 +23,7 @@ const X_AXIS_DY = 12; // 讓斜排文字與軸線保留可讀距離
 const X_AXIS_HEIGHT = 44; 
 const STACKED_MARGIN = { top: 34, right: 28, left: 64, bottom: 38 };
 const STACKED_X_AXIS_HEIGHT = 44;
+const PROJECT_COMPARE_MONTHLY_MARGIN = { top: 28, right: 230, left: 64, bottom: 74 };
 
 interface ChartProps {
     data: HouseData[];
@@ -256,6 +257,19 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
     const monthlyChartRef = React.useRef<HTMLDivElement>(null);
     const [summaryChartHeight, setSummaryChartHeight] = useState(360);
     const [monthlyChartHeight, setMonthlyChartHeight] = useState(380);
+    const [monthlyChartWidth, setMonthlyChartWidth] = useState(0);
+
+    React.useEffect(() => {
+        if (!monthlyChartRef.current) return;
+
+        const updateWidth = () => setMonthlyChartWidth(monthlyChartRef.current?.getBoundingClientRect().width || 0);
+        updateWidth();
+
+        const observer = new ResizeObserver(updateWidth);
+        observer.observe(monthlyChartRef.current);
+
+        return () => observer.disconnect();
+    }, []);
 
     const compareData = React.useMemo(() => {
         return selectedProjects.map((project, index) => {
@@ -367,6 +381,12 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
 
         return offsetMap;
     }, [compareData, monthlyChartHeight, monthlySalesData]);
+
+    const monthlyLineLabelXStep = React.useMemo(() => {
+        if (monthlySalesData.length <= 1 || monthlyChartWidth <= 0) return 0;
+        const plotWidth = Math.max(0, monthlyChartWidth - PROJECT_COMPARE_MONTHLY_MARGIN.left - PROJECT_COMPARE_MONTHLY_MARGIN.right);
+        return plotWidth / (monthlySalesData.length - 1);
+    }, [monthlyChartWidth, monthlySalesData.length]);
 
     const downloadChartPng = async (target: React.RefObject<HTMLDivElement>, title: string) => {
         if (!target.current) return;
@@ -510,7 +530,7 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
                 </div>
                 <AxisSideLabel value="成交筆數" />
                 <ResponsiveContainer width="100%" height={monthlyChartHeight}>
-                    <ComposedChart data={monthlySalesData} margin={{ top: 28, right: 210, left: 64, bottom: 74 }}>
+                    <ComposedChart data={monthlySalesData} margin={PROJECT_COMPARE_MONTHLY_MARGIN}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="month" angle={-35} textAnchor="end" height={70} tick={{ fontSize: 12, fill: '#334155', fontWeight: 900 }} stroke="#e2e8f0" />
                         <YAxis tick={{ fontSize: 13, fill: '#334155', fontWeight: 900 }} stroke="#e2e8f0" allowDecimals={false} axisLine={false} tickLine={false} />
@@ -535,9 +555,11 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
                                         const hasLaterValue = monthlySalesData.slice(index + 1).some(row => Number(row[item.project]) > 0);
                                         if (value <= 0 || hasLaterValue) return null;
                                         const labelYOffset = monthlyLineLabelOffsets.get(item.project) || 0;
+                                        const periodsToRight = Math.max(0, monthlySalesData.length - 1 - index);
+                                        const labelX = Number(props.x) + 10 + periodsToRight * monthlyLineLabelXStep;
                                         return (
                                             <text
-                                                x={Number(props.x) + 10}
+                                                x={labelX}
                                                 y={Number(props.y) + 4 + labelYOffset}
                                                 fill={item.color}
                                                 fontSize={12}
