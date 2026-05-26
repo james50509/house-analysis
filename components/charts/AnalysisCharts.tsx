@@ -329,28 +329,44 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
         }).filter(item => item.lastIndex >= 0);
 
         const offsetMap = new Map<string, number>();
-        const sortedLabels = [...endLabels].sort((a, b) => b.lastValue - a.lastValue || a.project.localeCompare(b.project));
-        const groupGap = 2;
-        let group: typeof sortedLabels = [];
-        const flushGroup = () => {
-            if (group.length === 0) return;
-            const labelGap = 16;
-            const center = (group.length - 1) / 2;
-            group.forEach((item, index) => offsetMap.set(item.project, (index - center) * labelGap));
-            group = [];
-        };
+        if (endLabels.length === 0) return offsetMap;
 
-        sortedLabels.forEach(item => {
-            const previous = group[group.length - 1];
-            if (previous && Math.abs(previous.lastValue - item.lastValue) > groupGap) {
-                flushGroup();
-            }
-            group.push(item);
+        const chartTop = 28;
+        const chartBottom = 74;
+        const plotHeight = Math.max(120, monthlyChartHeight - chartTop - chartBottom);
+        const maxValue = Math.max(1, ...monthlySalesData.flatMap(row => compareData.map(item => Number(row[item.project]) || 0)));
+        const labelGap = 20;
+        const minY = chartTop + 8;
+        const maxY = chartTop + plotHeight - 8;
+        const labels = endLabels
+            .map(item => {
+                const targetY = chartTop + (1 - item.lastValue / maxValue) * plotHeight;
+                return { ...item, targetY: Math.max(minY, Math.min(maxY, targetY)) };
+            })
+            .sort((a, b) => a.targetY - b.targetY || a.project.localeCompare(b.project));
+
+        labels.forEach((item, index) => {
+            if (index === 0) return;
+            const previous = labels[index - 1];
+            item.targetY = Math.max(item.targetY, previous.targetY + labelGap);
         });
-        flushGroup();
+
+        const overflow = labels.length ? labels[labels.length - 1].targetY - maxY : 0;
+        if (overflow > 0) {
+            for (let index = labels.length - 1; index >= 0; index -= 1) {
+                const next = labels[index + 1];
+                const cappedY = index === labels.length - 1 ? labels[index].targetY - overflow : Math.min(labels[index].targetY, next.targetY - labelGap);
+                labels[index].targetY = Math.max(minY, cappedY);
+            }
+        }
+
+        labels.forEach(item => {
+            const originalY = chartTop + (1 - item.lastValue / maxValue) * plotHeight;
+            offsetMap.set(item.project, item.targetY - originalY);
+        });
 
         return offsetMap;
-    }, [compareData, monthlySalesData]);
+    }, [compareData, monthlyChartHeight, monthlySalesData]);
 
     const downloadChartPng = async (target: React.RefObject<HTMLDivElement>, title: string) => {
         if (!target.current) return;
