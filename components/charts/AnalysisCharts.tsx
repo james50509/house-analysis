@@ -560,17 +560,29 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
                                             ? (x - PROJECT_COMPARE_MONTHLY_MARGIN.left) / index
                                             : monthlyLineLabelXStep;
                                         const labelX = PROJECT_COMPARE_MONTHLY_MARGIN.left + (monthlySalesData.length - 1) * inferredStep + 10;
+                                        const pointY = Number(props.y);
+                                        const labelY = pointY + labelYOffset;
                                         return (
-                                            <text
-                                                x={labelX}
-                                                y={Number(props.y) + 4 + labelYOffset}
-                                                fill={item.color}
-                                                fontSize={12}
-                                                fontWeight={900}
-                                                dominantBaseline="middle"
-                                            >
-                                                {item.project}
-                                            </text>
+                                            <g>
+                                                <path
+                                                    d={`M ${x + 5} ${pointY} L ${labelX - 7} ${labelY}`}
+                                                    fill="none"
+                                                    stroke={item.color}
+                                                    strokeWidth={1.5}
+                                                    strokeLinecap="round"
+                                                    opacity={0.72}
+                                                />
+                                                <text
+                                                    x={labelX}
+                                                    y={labelY}
+                                                    fill={item.color}
+                                                    fontSize={12}
+                                                    fontWeight={900}
+                                                    dominantBaseline="middle"
+                                                >
+                                                    {item.project}
+                                                </text>
+                                            </g>
                                         );
                                     }}
                                 />
