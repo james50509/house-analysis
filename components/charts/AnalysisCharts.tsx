@@ -254,6 +254,8 @@ const formatDateLabel = (date: Date | null, fallback?: string | null) => {
 export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, selectedProjects, onSelect }) => {
     const summaryChartRef = React.useRef<HTMLDivElement>(null);
     const monthlyChartRef = React.useRef<HTMLDivElement>(null);
+    const [summaryChartHeight, setSummaryChartHeight] = useState(360);
+    const [monthlyChartHeight, setMonthlyChartHeight] = useState(380);
 
     const compareData = React.useMemo(() => {
         return selectedProjects.map((project, index) => {
@@ -379,21 +381,36 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
             </div>
 
             <div ref={summaryChartRef} className="relative bg-white">
-                <div className="mb-4 flex items-center justify-between gap-4 px-8">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-4 px-8">
                     <h4 className="text-sm font-black text-slate-800">建案成交量與平均單價比較</h4>
-                    <button
-                        type="button"
-                        onClick={() => downloadChartPng(summaryChartRef, '建案成交量與平均單價比較')}
-                        className="export-exclude rounded-xl bg-slate-900 px-4 py-2 text-[11px] font-black text-white shadow-sm transition-colors hover:bg-blue-600"
-                    >
-                        下載 PNG
-                    </button>
+                    <div className="export-exclude flex flex-wrap items-center justify-end gap-3">
+                        <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white/80 px-4 py-2 shadow-sm backdrop-blur">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">調整圖表高度</span>
+                            <input
+                                type="range"
+                                min="300"
+                                max="760"
+                                step="20"
+                                value={summaryChartHeight}
+                                onChange={(e) => setSummaryChartHeight(Number(e.target.value))}
+                                className="h-1.5 w-32 cursor-pointer appearance-none rounded-lg bg-slate-200 accent-blue-600"
+                            />
+                            <span className="min-w-[42px] text-[10px] font-bold text-slate-600">{summaryChartHeight}px</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => downloadChartPng(summaryChartRef, '建案成交量與平均單價比較')}
+                            className="rounded-xl bg-slate-900 px-4 py-2 text-[11px] font-black text-white shadow-sm transition-colors hover:bg-blue-600"
+                        >
+                            下載 PNG
+                        </button>
+                    </div>
                 </div>
                 <AxisSideLabel value="成交筆數" />
                 <div className="absolute right-3 top-[35%] -translate-y-1/2 text-[13px] font-black text-slate-700 tracking-wide leading-tight [writing-mode:vertical-rl] pointer-events-none">
                     平均單價 (萬/坪)
                 </div>
-                <ResponsiveContainer width="100%" height={360}>
+                <ResponsiveContainer width="100%" height={summaryChartHeight}>
                     <ComposedChart data={barData} margin={{ top: 28, right: 72, left: 64, bottom: 80 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="name" angle={-30} textAnchor="end" height={70} tick={{ fontSize: 12, fill: '#334155', fontWeight: 900 }} stroke="#e2e8f0" />
@@ -412,18 +429,33 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
             </div>
 
             <div ref={monthlyChartRef} className="relative mt-10 border-t border-slate-100 bg-white pt-8">
-                <div className="mb-4 flex items-center justify-between gap-4 px-8">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-4 px-8">
                     <h4 className="text-sm font-black text-slate-800">每月成交筆數趨勢</h4>
-                    <button
-                        type="button"
-                        onClick={() => downloadChartPng(monthlyChartRef, '每月成交筆數趨勢')}
-                        className="export-exclude rounded-xl bg-slate-900 px-4 py-2 text-[11px] font-black text-white shadow-sm transition-colors hover:bg-blue-600"
-                    >
-                        下載 PNG
-                    </button>
+                    <div className="export-exclude flex flex-wrap items-center justify-end gap-3">
+                        <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white/80 px-4 py-2 shadow-sm backdrop-blur">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">調整圖表高度</span>
+                            <input
+                                type="range"
+                                min="300"
+                                max="760"
+                                step="20"
+                                value={monthlyChartHeight}
+                                onChange={(e) => setMonthlyChartHeight(Number(e.target.value))}
+                                className="h-1.5 w-32 cursor-pointer appearance-none rounded-lg bg-slate-200 accent-blue-600"
+                            />
+                            <span className="min-w-[42px] text-[10px] font-bold text-slate-600">{monthlyChartHeight}px</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => downloadChartPng(monthlyChartRef, '每月成交筆數趨勢')}
+                            className="rounded-xl bg-slate-900 px-4 py-2 text-[11px] font-black text-white shadow-sm transition-colors hover:bg-blue-600"
+                        >
+                            下載 PNG
+                        </button>
+                    </div>
                 </div>
                 <AxisSideLabel value="成交筆數" />
-                <ResponsiveContainer width="100%" height={380}>
+                <ResponsiveContainer width="100%" height={monthlyChartHeight}>
                     <ComposedChart data={monthlySalesData} margin={{ top: 28, right: 180, left: 64, bottom: 74 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="month" angle={-35} textAnchor="end" height={70} tick={{ fontSize: 12, fill: '#334155', fontWeight: 900 }} stroke="#e2e8f0" />
