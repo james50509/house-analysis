@@ -257,19 +257,6 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
     const monthlyChartRef = React.useRef<HTMLDivElement>(null);
     const [summaryChartHeight, setSummaryChartHeight] = useState(360);
     const [monthlyChartHeight, setMonthlyChartHeight] = useState(380);
-    const [monthlyChartWidth, setMonthlyChartWidth] = useState(0);
-
-    React.useEffect(() => {
-        if (!monthlyChartRef.current) return;
-
-        const updateWidth = () => setMonthlyChartWidth(monthlyChartRef.current?.getBoundingClientRect().width || 0);
-        updateWidth();
-
-        const observer = new ResizeObserver(updateWidth);
-        observer.observe(monthlyChartRef.current);
-
-        return () => observer.disconnect();
-    }, []);
 
     const compareData = React.useMemo(() => {
         return selectedProjects.map((project, index) => {
@@ -328,7 +315,7 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
         });
     }, [compareData]);
 
-    const monthlyLineLabelOffsets = React.useMemo(() => {
+    const monthlyEndLabels = React.useMemo(() => {
         const endLabels = compareData.map(item => {
             let lastIndex = -1;
             let lastValue = 0;
@@ -339,11 +326,10 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
                     lastValue = value;
                 }
             });
-            return { project: item.project, lastIndex, lastValue };
+            return { project: item.project, color: item.color, lastIndex, lastValue };
         }).filter(item => item.lastIndex >= 0);
 
-        const offsetMap = new Map<string, number>();
-        if (endLabels.length === 0) return offsetMap;
+        if (endLabels.length === 0) return [];
 
         const chartTop = 28;
         const chartBottom = 74;
@@ -374,19 +360,11 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
             }
         }
 
-        labels.forEach(item => {
+        return labels.map(item => {
             const originalY = chartTop + (1 - item.lastValue / maxValue) * plotHeight;
-            offsetMap.set(item.project, item.targetY - originalY);
+            return { ...item, offsetY: item.targetY - originalY };
         });
-
-        return offsetMap;
     }, [compareData, monthlyChartHeight, monthlySalesData]);
-
-    const monthlyLineLabelXStep = React.useMemo(() => {
-        if (monthlySalesData.length <= 1 || monthlyChartWidth <= 0) return 0;
-        const plotWidth = Math.max(0, monthlyChartWidth - PROJECT_COMPARE_MONTHLY_MARGIN.left - PROJECT_COMPARE_MONTHLY_MARGIN.right);
-        return plotWidth / (monthlySalesData.length - 1);
-    }, [monthlyChartWidth, monthlySalesData.length]);
 
     const downloadChartPng = async (target: React.RefObject<HTMLDivElement>, title: string) => {
         if (!target.current) return;
@@ -529,67 +507,44 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
                     </div>
                 </div>
                 <AxisSideLabel value="成交筆數" />
-                <ResponsiveContainer width="100%" height={monthlyChartHeight}>
-                    <ComposedChart data={monthlySalesData} margin={PROJECT_COMPARE_MONTHLY_MARGIN}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis dataKey="month" angle={-35} textAnchor="end" height={70} tick={{ fontSize: 12, fill: '#334155', fontWeight: 900 }} stroke="#e2e8f0" />
-                        <YAxis tick={{ fontSize: 13, fill: '#334155', fontWeight: 900 }} stroke="#e2e8f0" allowDecimals={false} axisLine={false} tickLine={false} />
-                        <Tooltip formatter={(value: any) => [`${value} 筆`, '成交筆數']} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.3)' }} />
-                        {compareData.map(item => (
-                            <Line
-                                key={item.project}
-                                type="monotone"
-                                dataKey={item.project}
-                                name={item.project}
-                                stroke={item.color}
-                                strokeWidth={3}
-                                dot={{ r: 4, fill: item.color, stroke: '#ffffff', strokeWidth: 2 }}
-                                activeDot={{ r: 6, fill: item.color, stroke: '#ffffff', strokeWidth: 2 }}
-                                connectNulls
-                            >
-                                <LabelList
+                <div className="relative">
+                    <ResponsiveContainer width="100%" height={monthlyChartHeight}>
+                        <ComposedChart data={monthlySalesData} margin={PROJECT_COMPARE_MONTHLY_MARGIN}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis dataKey="month" angle={-35} textAnchor="end" height={70} tick={{ fontSize: 12, fill: '#334155', fontWeight: 900 }} stroke="#e2e8f0" />
+                            <YAxis tick={{ fontSize: 13, fill: '#334155', fontWeight: 900 }} stroke="#e2e8f0" allowDecimals={false} axisLine={false} tickLine={false} />
+                            <Tooltip formatter={(value: any) => [`${value} 筆`, '成交筆數']} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.3)' }} />
+                            {compareData.map(item => (
+                                <Line
+                                    key={item.project}
+                                    type="monotone"
                                     dataKey={item.project}
-                                    content={(props: any) => {
-                                        const index = Number(props.index);
-                                        const value = Number(props.value);
-                                        const hasLaterValue = monthlySalesData.slice(index + 1).some(row => Number(row[item.project]) > 0);
-                                        if (value <= 0 || hasLaterValue) return null;
-                                        const labelYOffset = monthlyLineLabelOffsets.get(item.project) || 0;
-                                        const x = Number(props.x);
-                                        const inferredStep = index > 0
-                                            ? (x - PROJECT_COMPARE_MONTHLY_MARGIN.left) / index
-                                            : monthlyLineLabelXStep;
-                                        const labelX = PROJECT_COMPARE_MONTHLY_MARGIN.left + (monthlySalesData.length - 1) * inferredStep + 10;
-                                        const pointY = Number(props.y);
-                                        const labelY = pointY + labelYOffset;
-                                        return (
-                                            <g>
-                                                <path
-                                                    d={`M ${x + 5} ${pointY} L ${labelX - 7} ${labelY}`}
-                                                    fill="none"
-                                                    stroke={item.color}
-                                                    strokeWidth={1.5}
-                                                    strokeLinecap="round"
-                                                    opacity={0.72}
-                                                />
-                                                <text
-                                                    x={labelX}
-                                                    y={labelY}
-                                                    fill={item.color}
-                                                    fontSize={12}
-                                                    fontWeight={900}
-                                                    dominantBaseline="middle"
-                                                >
-                                                    {item.project}
-                                                </text>
-                                            </g>
-                                        );
-                                    }}
+                                    name={item.project}
+                                    stroke={item.color}
+                                    strokeWidth={3}
+                                    dot={{ r: 4, fill: item.color, stroke: '#ffffff', strokeWidth: 2 }}
+                                    activeDot={{ r: 6, fill: item.color, stroke: '#ffffff', strokeWidth: 2 }}
+                                    connectNulls
                                 />
-                            </Line>
+                            ))}
+                        </ComposedChart>
+                    </ResponsiveContainer>
+                    <div className="pointer-events-none absolute inset-y-0 right-7 w-40">
+                        {monthlyEndLabels.map(item => (
+                            <div
+                                key={item.project}
+                                className="absolute left-0 whitespace-nowrap text-[12px] font-black leading-none"
+                                style={{
+                                    top: `${item.targetY}px`,
+                                    color: item.color,
+                                    transform: 'translateY(-50%)'
+                                }}
+                            >
+                                {item.project}
+                            </div>
                         ))}
-                    </ComposedChart>
-                </ResponsiveContainer>
+                    </div>
+                </div>
             </div>
         </div>
     );
