@@ -511,11 +511,14 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
                                         dataKey={item.project}
                                         content={(labelProps: any) => {
                                             const value = Number(labelProps.value);
-                                            if (labelProps.index !== monthlySalesData.length - 1 || value <= 0) return null;
+                                            const endLabel = monthlyEndLabels.find(label => label.project === item.project);
+                                            if (!endLabel || labelProps.index !== endLabel.lastIndex || value <= 0) return null;
                                             const xOffset = monthlyEndLabelXOffsets.get(item.project) ?? 14;
+                                            const monthsFromChartEnd = Math.max(0, monthlySalesData.length - 1 - endLabel.lastIndex);
+                                            const rightSideOffset = monthsFromChartEnd * 76;
                                             return (
                                                 <text
-                                                    x={Number(labelProps.x) + xOffset}
+                                                    x={Number(labelProps.x) + rightSideOffset + xOffset}
                                                     y={Number(labelProps.y)}
                                                     fill={item.color}
                                                     fontSize={12}
