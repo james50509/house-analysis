@@ -317,15 +317,8 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
 
     const monthlyEndLabels = React.useMemo(() => {
         return compareData.map(item => {
-            let lastIndex = -1;
-            let lastValue = 0;
-            monthlySalesData.forEach((row, index) => {
-                const value = Number(row[item.project]);
-                if (value > 0) {
-                    lastIndex = index;
-                    lastValue = value;
-                }
-            });
+            const lastIndex = monthlySalesData.length - 1;
+            const lastValue = lastIndex >= 0 ? Number(monthlySalesData[lastIndex][item.project]) || 0 : 0;
             return { project: item.project, color: item.color, lastIndex, lastValue };
         }).filter(item => item.lastIndex >= 0);
     }, [compareData, monthlySalesData]);
@@ -512,13 +505,11 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
                                         content={(labelProps: any) => {
                                             const value = Number(labelProps.value);
                                             const endLabel = monthlyEndLabels.find(label => label.project === item.project);
-                                            if (!endLabel || labelProps.index !== endLabel.lastIndex || value <= 0) return null;
+                                            if (!endLabel || labelProps.index !== endLabel.lastIndex) return null;
                                             const xOffset = monthlyEndLabelXOffsets.get(item.project) ?? 14;
-                                            const monthsFromChartEnd = Math.max(0, monthlySalesData.length - 1 - endLabel.lastIndex);
-                                            const rightSideOffset = monthsFromChartEnd * 76;
                                             return (
                                                 <text
-                                                    x={Number(labelProps.x) + rightSideOffset + xOffset}
+                                                    x={Number(labelProps.x) + xOffset}
                                                     y={Number(labelProps.y)}
                                                     fill={item.color}
                                                     fontSize={12}
