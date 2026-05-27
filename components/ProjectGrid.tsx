@@ -91,6 +91,7 @@ export const ProjectGrid: React.FC<ProjectGridProps> = ({ data, title, onClear }
     return (
         <div 
             ref={containerRef}
+            data-filter-segment="true"
             className="mt-8 pt-8 border-t-2 border-slate-100 animate-in fade-in slide-in-from-top-6 duration-700 scroll-mt-64"
         >
             <div className="flex justify-between items-center mb-6">
