@@ -316,7 +316,7 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
     }, [compareData]);
 
     const monthlyEndLabels = React.useMemo(() => {
-        const endLabels = compareData.map(item => {
+        return compareData.map(item => {
             let lastIndex = -1;
             let lastValue = 0;
             monthlySalesData.forEach((row, index) => {
@@ -328,43 +328,24 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
             });
             return { project: item.project, color: item.color, lastIndex, lastValue };
         }).filter(item => item.lastIndex >= 0);
+    }, [compareData, monthlySalesData]);
 
-        if (endLabels.length === 0) return [];
-
-        const chartTop = 28;
-        const chartBottom = 74;
-        const plotHeight = Math.max(120, monthlyChartHeight - chartTop - chartBottom);
-        const maxValue = Math.max(1, ...monthlySalesData.flatMap(row => compareData.map(item => Number(row[item.project]) || 0)));
-        const labelGap = 20;
-        const minY = chartTop + 8;
-        const maxY = chartTop + plotHeight - 8;
-        const labels = endLabels
-            .map(item => {
-                const targetY = chartTop + (1 - item.lastValue / maxValue) * plotHeight;
-                return { ...item, targetY: Math.max(minY, Math.min(maxY, targetY)) };
-            })
-            .sort((a, b) => a.targetY - b.targetY || a.project.localeCompare(b.project));
-
-        labels.forEach((item, index) => {
-            if (index === 0) return;
-            const previous = labels[index - 1];
-            item.targetY = Math.max(item.targetY, previous.targetY + labelGap);
+    const monthlyEndLabelXOffsets = React.useMemo(() => {
+        const groups = new Map<number, typeof monthlyEndLabels>();
+        monthlyEndLabels.forEach(item => {
+            const items = groups.get(item.lastValue) || [];
+            items.push(item);
+            groups.set(item.lastValue, items);
         });
 
-        const overflow = labels.length ? labels[labels.length - 1].targetY - maxY : 0;
-        if (overflow > 0) {
-            for (let index = labels.length - 1; index >= 0; index -= 1) {
-                const next = labels[index + 1];
-                const cappedY = index === labels.length - 1 ? labels[index].targetY - overflow : Math.min(labels[index].targetY, next.targetY - labelGap);
-                labels[index].targetY = Math.max(minY, cappedY);
-            }
-        }
-
-        return labels.map(item => {
-            const originalY = chartTop + (1 - item.lastValue / maxValue) * plotHeight;
-            return { ...item, offsetY: item.targetY - originalY };
+        const offsets = new Map<string, number>();
+        groups.forEach(items => {
+            items
+                .sort((a, b) => a.project.localeCompare(b.project))
+                .forEach((item, index) => offsets.set(item.project, 14 + index * 72));
         });
-    }, [compareData, monthlyChartHeight, monthlySalesData]);
+        return offsets;
+    }, [monthlyEndLabels]);
 
     const downloadChartPng = async (target: React.RefObject<HTMLDivElement>, title: string) => {
         if (!target.current) return;
@@ -525,25 +506,31 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
                                     dot={{ r: 4, fill: item.color, stroke: '#ffffff', strokeWidth: 2 }}
                                     activeDot={{ r: 6, fill: item.color, stroke: '#ffffff', strokeWidth: 2 }}
                                     connectNulls
-                                />
+                                >
+                                    <LabelList
+                                        dataKey={item.project}
+                                        content={(labelProps: any) => {
+                                            const value = Number(labelProps.value);
+                                            if (labelProps.index !== monthlySalesData.length - 1 || value <= 0) return null;
+                                            const xOffset = monthlyEndLabelXOffsets.get(item.project) ?? 14;
+                                            return (
+                                                <text
+                                                    x={Number(labelProps.x) + xOffset}
+                                                    y={Number(labelProps.y)}
+                                                    fill={item.color}
+                                                    fontSize={12}
+                                                    fontWeight={900}
+                                                    dominantBaseline="middle"
+                                                >
+                                                    {item.project}
+                                                </text>
+                                            );
+                                        }}
+                                    />
+                                </Line>
                             ))}
                         </ComposedChart>
                     </ResponsiveContainer>
-                    <div className="pointer-events-none absolute inset-y-0 right-7 w-40">
-                        {monthlyEndLabels.map(item => (
-                            <div
-                                key={item.project}
-                                className="absolute left-0 whitespace-nowrap text-[12px] font-black leading-none"
-                                style={{
-                                    top: `${item.targetY}px`,
-                                    color: item.color,
-                                    transform: 'translateY(-50%)'
-                                }}
-                            >
-                                {item.project}
-                            </div>
-                        ))}
-                    </div>
                 </div>
             </div>
         </div>
