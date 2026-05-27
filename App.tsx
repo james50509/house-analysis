@@ -135,6 +135,7 @@ const App: React.FC = () => {
     const [areaRangeRoomType, setAreaRangeRoomType] = useState('全部房型');
     const [excludedProjects, setExcludedProjects] = useState<string[]>([]);
     const [compareProjects, setCompareProjects] = useState<string[]>([]);
+    const [parkingBoxplotMode, setParkingBoxplotMode] = useState<'type' | 'floor'>('type');
 
     const matchRange = (val: number, rangeLabel: string) => {
         // Handle Chinese labels
@@ -607,13 +608,39 @@ const App: React.FC = () => {
                                 <ParkingPriceBar data={filteredParkingData} />
                             </ChartCard>
 
-                            <ChartCard {...chartCardProps} title="車位價格分析 (依類別)" icon={<Car size={32} className="text-slate-700" />}>
-                                <Boxplot data={filteredParkingData} groupBy="type" xLabel="車位類別" />
+                            <ChartCard {...chartCardProps} title={'\u8eca\u4f4d\u50f9\u683c\u5206\u6790 (\u4f9d\u985e\u5225 / \u4f9d\u6a13\u5c64)'} icon={<Car size={32} className="text-slate-700" />}>
+                                <div className="export-exclude mb-5 flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setParkingBoxplotMode('type')}
+                                        className={`rounded-xl border px-5 py-2.5 text-sm font-black transition-all ${
+                                            parkingBoxplotMode === 'type'
+                                                ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-100'
+                                                : 'border-slate-200 bg-white text-slate-500 hover:border-blue-200 hover:text-blue-600'
+                                        }`}
+                                    >
+                                        {'\u4f9d\u985e\u5225'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setParkingBoxplotMode('floor')}
+                                        className={`rounded-xl border px-5 py-2.5 text-sm font-black transition-all ${
+                                            parkingBoxplotMode === 'floor'
+                                                ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-100'
+                                                : 'border-slate-200 bg-white text-slate-500 hover:border-blue-200 hover:text-blue-600'
+                                        }`}
+                                    >
+                                        {'\u4f9d\u6a13\u5c64'}
+                                    </button>
+                                </div>
+                                <Boxplot
+                                    data={filteredParkingData}
+                                    groupBy={parkingBoxplotMode}
+                                    xLabel={parkingBoxplotMode === 'type' ? '\u8eca\u4f4d\u985e\u5225' : '\u505c\u8eca\u5c64\u4f4d'}
+                                />
                             </ChartCard>
 
-                            <ChartCard {...chartCardProps} title="車位價格分析 (依樓層)" icon={<Car size={32} className="text-indigo-700" />}>
-                                <Boxplot data={filteredParkingData} groupBy="floor" xLabel="停車層位" />
-                            </ChartCard>
+
 
                             <ChartCard {...chartCardProps} title="房屋級距與車位配比" icon={<Car size={32} className="text-blue-600" />} filterSource="parkingRatio">
                                 <ParkingAreaBar data={filteredData} onSelect={(k) => updateActiveFilterWithoutScrollJump({ type: 'range', key: k, sourceId: 'parkingRatio' })} />
