@@ -323,7 +323,7 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
         }).filter(item => item.lastIndex >= 0);
     }, [compareData, monthlySalesData]);
 
-    const monthlyEndLabelXOffsets = React.useMemo(() => {
+    const monthlyEndLabelOffsets = React.useMemo(() => {
         const groups = new Map<number, typeof monthlyEndLabels>();
         monthlyEndLabels.forEach(item => {
             const items = groups.get(item.lastValue) || [];
@@ -331,11 +331,16 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
             groups.set(item.lastValue, items);
         });
 
-        const offsets = new Map<string, number>();
+        const offsets = new Map<string, { x: number; y: number }>();
         groups.forEach(items => {
             items
                 .sort((a, b) => a.project.localeCompare(b.project))
-                .forEach((item, index) => offsets.set(item.project, 14 + index * 72));
+                .forEach((item, index) => {
+                    const yOffset = item.lastValue === 0
+                        ? -index * 15
+                        : (index - (items.length - 1) / 2) * 15;
+                    offsets.set(item.project, { x: 14, y: yOffset });
+                });
         });
         return offsets;
     }, [monthlyEndLabels]);
@@ -506,11 +511,11 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
                                             const value = Number(labelProps.value);
                                             const endLabel = monthlyEndLabels.find(label => label.project === item.project);
                                             if (!endLabel || labelProps.index !== endLabel.lastIndex) return null;
-                                            const xOffset = monthlyEndLabelXOffsets.get(item.project) ?? 14;
+                                            const labelOffset = monthlyEndLabelOffsets.get(item.project) ?? { x: 14, y: 0 };
                                             return (
                                                 <text
-                                                    x={Number(labelProps.x) + xOffset}
-                                                    y={Number(labelProps.y)}
+                                                    x={Number(labelProps.x) + labelOffset.x}
+                                                    y={Number(labelProps.y) + labelOffset.y}
                                                     fill={item.color}
                                                     fontSize={12}
                                                     fontWeight={900}
