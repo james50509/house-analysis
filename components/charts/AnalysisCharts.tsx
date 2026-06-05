@@ -23,7 +23,7 @@ const X_AXIS_DY = 12; // 讓斜排文字與軸線保留可讀距離
 const X_AXIS_HEIGHT = 44; 
 const STACKED_MARGIN = { top: 34, right: 28, left: 64, bottom: 38 };
 const STACKED_X_AXIS_HEIGHT = 44;
-const PROJECT_COMPARE_MONTHLY_MARGIN = { top: 28, right: 230, left: 64, bottom: 74 };
+const PROJECT_COMPARE_MONTHLY_MARGIN = { top: 28, right: 72, left: 64, bottom: 74 };
 
 interface ChartProps {
     data: HouseData[];
@@ -315,36 +315,6 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
         });
     }, [compareData]);
 
-    const monthlyEndLabels = React.useMemo(() => {
-        return compareData.map(item => {
-            const lastIndex = monthlySalesData.length - 1;
-            const lastValue = lastIndex >= 0 ? Number(monthlySalesData[lastIndex][item.project]) || 0 : 0;
-            return { project: item.project, color: item.color, lastIndex, lastValue };
-        }).filter(item => item.lastIndex >= 0);
-    }, [compareData, monthlySalesData]);
-
-    const monthlyEndLabelOffsets = React.useMemo(() => {
-        const groups = new Map<number, typeof monthlyEndLabels>();
-        monthlyEndLabels.forEach(item => {
-            const items = groups.get(item.lastValue) || [];
-            items.push(item);
-            groups.set(item.lastValue, items);
-        });
-
-        const offsets = new Map<string, { x: number; y: number }>();
-        groups.forEach(items => {
-            items
-                .sort((a, b) => a.project.localeCompare(b.project))
-                .forEach((item, index) => {
-                    const yOffset = item.lastValue === 0
-                        ? -index * 15
-                        : (index - (items.length - 1) / 2) * 15;
-                    offsets.set(item.project, { x: 14, y: yOffset });
-                });
-        });
-        return offsets;
-    }, [monthlyEndLabels]);
-
     const downloadChartPng = async (target: React.RefObject<HTMLDivElement>, title: string) => {
         if (!target.current) return;
         const dataUrl = await toPng(target.current, {
@@ -504,32 +474,11 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
                                     dot={{ r: 4, fill: item.color, stroke: '#ffffff', strokeWidth: 2 }}
                                     activeDot={{ r: 6, fill: item.color, stroke: '#ffffff', strokeWidth: 2 }}
                                     connectNulls
-                                >
-                                    <LabelList
-                                        dataKey={item.project}
-                                        content={(labelProps: any) => {
-                                            const value = Number(labelProps.value);
-                                            const endLabel = monthlyEndLabels.find(label => label.project === item.project);
-                                            if (!endLabel || labelProps.index !== endLabel.lastIndex) return null;
-                                            const labelOffset = monthlyEndLabelOffsets.get(item.project) ?? { x: 14, y: 0 };
-                                            return (
-                                                <text
-                                                    x={Number(labelProps.x) + labelOffset.x}
-                                                    y={Number(labelProps.y) + labelOffset.y}
-                                                    fill={item.color}
-                                                    fontSize={12}
-                                                    fontWeight={900}
-                                                    dominantBaseline="middle"
-                                                >
-                                                    {item.project}
-                                                </text>
-                                            );
-                                        }}
-                                    />
-                                </Line>
+                                />
                             ))}
                         </ComposedChart>
                     </ResponsiveContainer>
+                    <LegendSection items={compareData.map(item => ({ name: item.project, color: item.color }))} />
                 </div>
             </div>
         </div>
