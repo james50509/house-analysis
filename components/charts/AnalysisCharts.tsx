@@ -462,7 +462,7 @@ export const ProjectCompareMode: React.FC<ProjectCompareProps> = ({ data, select
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                             <XAxis dataKey="month" angle={-35} textAnchor="end" height={70} tick={{ fontSize: 12, fill: '#334155', fontWeight: 900 }} stroke="#e2e8f0" />
                             <YAxis tick={{ fontSize: 13, fill: '#334155', fontWeight: 900 }} stroke="#e2e8f0" allowDecimals={false} axisLine={false} tickLine={false} />
-                            <Tooltip formatter={(value: any) => [`${value} 筆`, '成交筆數']} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.3)' }} />
+                            <Tooltip formatter={(value: any, name: any) => [`${value} 筆`, name]} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.3)' }} />
                             {compareData.map(item => (
                                 <Line
                                     key={item.project}
