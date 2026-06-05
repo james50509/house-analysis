@@ -1742,9 +1742,12 @@ export const RoomPieChart: React.FC<ChartProps> = ({ data, onSelect }) => {
     }, [data]);
     const total = React.useMemo(() => chartData.reduce((sum, item) => sum + item.value, 0), [chartData]);
     const renderPieLabel = (props: any) => {
-        const { cx, cy, midAngle, outerRadius, value } = props;
+        const { cx, cy, midAngle, outerRadius } = props;
+        const value = Number(props.value ?? props.payload?.value ?? 0);
         if (!total || !value) return null;
-        const percent = Math.round((value / total) * 100);
+        const percent = Number.isFinite(props.percent)
+            ? Math.round(Number(props.percent) * 100)
+            : Math.round((value / total) * 100);
         if (percent < 3) return null;
 
         const radius = Number(outerRadius) + 24;
